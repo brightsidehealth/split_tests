@@ -10,17 +10,19 @@ import (
 )
 
 type junitXML struct {
-	TestCases []struct {
-		File string  `xml:"file,attr"`
-		Time float64 `xml:"time,attr"`
-	} `xml:"testcase"`
+	TestCases []TestCase `xml:"testcase"`
+}
+
+type TestCase struct {
+	File string  `xml:"file,attr"`
+	Time float64 `xml:"time,attr"`
 }
 
 func loadJUnitXML(reader io.Reader) *junitXML {
 	var junitXML junitXML
 
-	decoder := xml.NewDecoder(reader)
-	err := decoder.Decode(&junitXML)
+	byteValue, _ := io.ReadAll(reader)
+	err := xml.Unmarshal(byteValue, &junitXML)
 	if err != nil {
 		fatalMsg("failed to parse junit xml: %v\n", err)
 	}
