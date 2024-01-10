@@ -9,29 +9,32 @@ import (
 	"github.com/bmatcuk/doublestar"
 )
 
-type junitXML struct {
+type TestCase struct {
+	XMLName xml.Name `xml:"testcase"`
+	File    string   `xml:"file,attr"`
+	Time    float64  `xml:"time,attr"`
+}
+
+type TestSuite struct {
 	TestCases []TestCase `xml:"testcase"`
 }
 
-type TestCase struct {
-	File string  `xml:"file,attr"`
-	Time float64 `xml:"time,attr"`
-}
+func loadJUnitXML(reader io.Reader) *TestSuite {
+	var suite TestSuite
 
-func loadJUnitXML(reader io.Reader) *junitXML {
-	var junitXML junitXML
-
-	byteValue, _ := io.ReadAll(reader)
-	err := xml.Unmarshal(byteValue, &junitXML)
+	decoder := xml.NewDecoder(reader)
+	err := decoder.Decode(&suite)
 	if err != nil {
 		fatalMsg("failed to parse junit xml: %v\n", err)
 	}
 
-	return &junitXML
+	return &suite
 }
 
 func addFileTimesFromIOReader(fileTimes map[string]float64, reader io.Reader) {
 	junitXML := loadJUnitXML(reader)
+	printMsg("found %d test cases\n", len(junitXML.TestCases))
+
 	for _, testCase := range junitXML.TestCases {
 		filePath := path.Clean(testCase.File)
 		fileTimes[filePath] += testCase.Time
